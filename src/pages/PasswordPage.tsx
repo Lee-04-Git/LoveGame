@@ -11,7 +11,7 @@ const PasswordPage: React.FC<PasswordPageProps> = ({ onNext }) => {
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
-  const correctPassword = '30/10/25';
+  const correctPassword = '31/10/25';
   const firstMessageDate = '01/11/25';
 
   const handleSubmit = (e: React.FormEvent) => {

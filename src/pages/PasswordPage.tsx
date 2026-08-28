@@ -9,8 +9,10 @@ interface PasswordPageProps {
 const PasswordPage: React.FC<PasswordPageProps> = ({ onNext }) => {
   const [password, setPassword] = useState('');
   const [showError, setShowError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
-  const correctPassword = '02-28-25';
+  const correctPassword = '30/10/25';
+  const firstMessageDate = '01/11/25';
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,14 +21,18 @@ const PasswordPage: React.FC<PasswordPageProps> = ({ onNext }) => {
       soundEffects.ding();
       setShowError(false);
       setShowSuccess(true);
-      
-      setTimeout(() => {
-        onNext();
-      }, 1500);
+      // Don't auto-navigate - user stays on success message
     } else {
       soundEffects.boop();
       setShowError(true);
       setShowSuccess(false);
+      
+      // Set appropriate error message
+      if (password === firstMessageDate) {
+        setErrorMessage('Noo, I meant the day I first messaged you 😒');
+      } else {
+        setErrorMessage('And here I thought you remembered everything 😒');
+      }
       
       setTimeout(() => {
         setShowError(false);
@@ -35,14 +41,24 @@ const PasswordPage: React.FC<PasswordPageProps> = ({ onNext }) => {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPassword(e.target.value);
+    let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+    
+    // Format as DD/MM/YY
+    if (value.length >= 2) {
+      value = value.slice(0, 2) + '/' + value.slice(2);
+    }
+    if (value.length >= 5) {
+      value = value.slice(0, 5) + '/' + value.slice(5, 7);
+    }
+    
+    setPassword(value);
     if (showError) setShowError(false);
   };
 
   return (
     <div className="text-center space-y-6 sm:space-y-8 px-4">
       <div className="space-y-4">
-        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold gradient-text leading-relaxed">Do you still remember our special date?</h2>
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold gradient-text leading-relaxed">Do you remember the first day we met?</h2>
         <p className="text-base sm:text-lg md:text-xl text-pink-600 font-medium">Enter the date when our love story began</p>
       </div>
 
@@ -55,7 +71,7 @@ const PasswordPage: React.FC<PasswordPageProps> = ({ onNext }) => {
             type="text"
             value={password}
             onChange={handleInputChange}
-            placeholder="MM-DD-YY"
+            placeholder="DD/MM/YY"
             maxLength={8}
             className="w-full px-4 sm:px-6 py-3 sm:py-4 text-center text-lg sm:text-xl font-semibold border-2 border-pink-300 rounded-xl sm:rounded-2xl focus:outline-none focus:border-pink-500 focus:ring-4 focus:ring-pink-200 transition-all duration-300 bg-white/90 backdrop-blur-sm shadow-lg hover:shadow-xl"
             style={{ fontFamily: 'monospace', letterSpacing: '0.15em' }}
@@ -86,7 +102,7 @@ const PasswordPage: React.FC<PasswordPageProps> = ({ onNext }) => {
             exit={{ opacity: 0, y: -10 }}
             className="text-pink-600 font-semibold text-lg"
           >
-            Did u forgot our special day?! 🤨
+            {errorMessage}
           </motion.div>
         )}
       </AnimatePresence>
@@ -104,9 +120,22 @@ const PasswordPage: React.FC<PasswordPageProps> = ({ onNext }) => {
               transition={{ duration: 0.5 }}
               className="text-2xl"
             >
-              <div className="w-8 h-8 bg-gradient-to-br from-pink-400 to-rose-400 rounded-full" />
+              <div className="w-8 h-8 bg-gradient-to-br from-pink-400 to-rose-400 rounded-full mx-auto" />
             </motion.div>
-            <div className="text-pink-700 font-semibold">Perfect! You remembered!</div>
+            <div className="text-pink-700 font-semibold">To this day I am still happy you replied back 😌</div>
+            
+            {/* Continue button */}
+            <motion.button
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              onClick={onNext}
+              className="mt-4 px-8 py-3 bg-gradient-to-r from-pink-500 via-rose-500 to-pink-500 text-white font-bold rounded-2xl shadow-lg hover:shadow-pink-300/50 transition-all duration-300"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              Continue →
+            </motion.button>
           </motion.div>
         )}
       </AnimatePresence>

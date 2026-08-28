@@ -25,7 +25,7 @@ export class SoundEffects {
     oscillator.frequency.value = frequency;
     oscillator.type = type;
 
-    gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime);
+    gainNode.gain.setValueAtTime(0.2, this.audioContext.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + duration);
 
     oscillator.start(this.audioContext.currentTime);

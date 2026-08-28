@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { soundEffects } from './utils/soundEffects';
 import SkipGuardModal from './components/SkipGuardModal';
@@ -7,17 +7,92 @@ import MiniGamePage from './pages/MiniGamePage';
 import PasswordPage from './pages/PasswordPage';
 import ReasonsPage from './pages/ReasonsPage';
 import SecretLetterPage from './pages/SecretLetterPage';
+import MusicPage from './pages/MusicPage';
+import backgroundMusic from './assets/music/Bright_Eyes_First_Day_Of_My_Life.mp3';
 
-type Page = 'welcome' | 'game' | 'password' | 'reasons' | 'letter';
+type Page = 'welcome' | 'game' | 'password' | 'reasons' | 'letter' | 'music';
 
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('welcome');
   const [showSkipModal, setShowSkipModal] = useState(false);
-  const [isMusicOn, setIsMusicOn] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const fadeIntervalRef = useRef<number | null>(null);
 
-  const handleMusicToggle = () => {
-    const nowPlaying = soundEffects.toggleMusic();
-    setIsMusicOn(nowPlaying);
+  useEffect(() => {
+    // Create and setup background music
+    const audio = new Audio(backgroundMusic);
+    audio.loop = true;
+    audio.volume = 0;
+    audioRef.current = audio;
+
+    // Auto-play with fade-in
+    const playWithFadeIn = async () => {
+      try {
+        await audio.play();
+        console.log('Background music started playing');
+        
+        // Quick fade-in to 0.4 volume in 1 second
+        let currentVolume = 0;
+        const targetVolume = 0.4;
+        fadeIntervalRef.current = setInterval(() => {
+          if (currentVolume < targetVolume) {
+            currentVolume += 0.04; // Reaches 0.4 in exactly 1 second (0.04 * 10 steps * 100ms)
+            audio.volume = Math.min(currentVolume, targetVolume);
+          } else {
+            if (fadeIntervalRef.current) {
+              clearInterval(fadeIntervalRef.current);
+            }
+          }
+        }, 100);
+      } catch (error) {
+        console.log('Autoplay blocked, will start on user interaction', error);
+      }
+    };
+
+    // Try to play immediately
+    playWithFadeIn();
+
+    // Fallback: start on first user interaction (more aggressive)
+    const handleInteraction = async () => {
+      if (audio.paused) {
+        console.log('User interacted, attempting to play background music');
+        await playWithFadeIn();
+      }
+    };
+
+    // Add listeners for multiple interaction types
+    const events = ['click', 'touchstart', 'keydown', 'mousedown'];
+    events.forEach(event => {
+      document.addEventListener(event, handleInteraction, { once: true });
+    });
+
+    return () => {
+      audio.pause();
+      if (fadeIntervalRef.current) {
+        clearInterval(fadeIntervalRef.current);
+      }
+      events.forEach(event => {
+        document.removeEventListener(event, handleInteraction);
+      });
+    };
+  }, []);
+
+  const handleStartOver = () => {
+    soundEffects.pop();
+    setCurrentPage('welcome');
+    
+    // Restart background music from beginning
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+      if (audioRef.current.paused) {
+        audioRef.current.play().catch(err => console.log('Play error:', err));
+      }
+    }
+  };
+
+  const handleMusicIconClick = () => {
+    soundEffects.pop();
+    setCurrentPage('music');
   };
 
   const pageVariants = {
@@ -44,7 +119,12 @@ function App() {
       case 'reasons':
         return <ReasonsPage onNext={() => { soundEffects.pop(); setCurrentPage('letter'); }} />;
       case 'letter':
-        return <SecretLetterPage onBackToStart={() => { soundEffects.pop(); setCurrentPage('welcome'); }} />;
+        return <SecretLetterPage onBackToStart={handleStartOver} />;
+      case 'music':
+        return <MusicPage 
+          onBack={() => { soundEffects.pop(); setCurrentPage('welcome'); }} 
+          backgroundAudio={audioRef.current}
+        />;
       default:
         return <WelcomePage onNext={() => setCurrentPage('game')} />;
     }
@@ -68,8 +148,6 @@ function App() {
 
       {/* Soft overlay for depth */}
       <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-pink-50/40 to-white/30"></div>
-      
-
 
       {/* Radial gradient spots for depth */}
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-pink-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
@@ -93,47 +171,47 @@ function App() {
         </AnimatePresence>
       </div>
 
-      {/* Music Toggle Button - Top Left Corner */}
-      <motion.button
-        initial={{ opacity: 0, scale: 0.5 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.5, duration: 0.4 }}
-        onClick={handleMusicToggle}
-        className="fixed top-4 left-4 w-12 h-12 rounded-full flex items-center justify-center text-2xl z-50 transition-all duration-300 shadow-lg"
-        style={{
-          background: isMusicOn
-            ? 'linear-gradient(135deg, #f472b6, #ec4899)'
-            : 'rgba(255, 255, 255, 0.8)',
-          backdropFilter: 'blur(10px)',
-          border: isMusicOn ? '2px solid #ec4899' : '2px solid rgba(236, 72, 153, 0.3)',
-          boxShadow: isMusicOn
-            ? '0 4px 20px rgba(236, 72, 153, 0.4)'
-            : '0 4px 12px rgba(236, 72, 153, 0.15)',
-        }}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-      >
-        <motion.span
-          animate={isMusicOn ? { rotate: [0, -10, 10, -10, 0] } : {}}
-          transition={{ duration: 1, repeat: isMusicOn ? Infinity : 0, repeatDelay: 2 }}
+      {/* Music Icon Button - Top Left Corner */}
+      {currentPage !== 'music' && (
+        <motion.button
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.5, duration: 0.4 }}
+          onClick={handleMusicIconClick}
+          className="fixed top-4 left-4 w-12 h-12 rounded-full flex items-center justify-center text-2xl z-50 transition-all duration-300 shadow-lg"
+          style={{
+            background: 'linear-gradient(135deg, #f472b6, #ec4899)',
+            backdropFilter: 'blur(10px)',
+            border: '2px solid #ec4899',
+            boxShadow: '0 4px 20px rgba(236, 72, 153, 0.4)',
+          }}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
         >
-          🎵
-        </motion.span>
-      </motion.button>
+          <motion.span
+            animate={{ rotate: [0, -10, 10, -10, 0] }}
+            transition={{ duration: 1, repeat: Infinity, repeatDelay: 2 }}
+          >
+            🎵
+          </motion.span>
+        </motion.button>
+      )}
 
       {/* Global Skip Guard Button */}
-      <motion.button
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        onClick={() => {
-          soundEffects.boop();
-          setShowSkipModal(true);
-        }}
-        className="fixed bottom-4 right-4 text-pink-400 hover:text-pink-600 text-xs font-bold tracking-widest uppercase px-4 py-2 rounded-full border border-pink-200 hover:bg-pink-50 transition-all z-50 bg-white/80 backdrop-blur-sm shadow-lg"
-      >
-        Skip
-      </motion.button>
+      {currentPage !== 'music' && (
+        <motion.button
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={() => {
+            soundEffects.boop();
+            setShowSkipModal(true);
+          }}
+          className="fixed bottom-4 right-4 text-pink-400 hover:text-pink-600 text-xs font-bold tracking-widest uppercase px-4 py-2 rounded-full border border-pink-200 hover:bg-pink-50 transition-all z-50 bg-white/80 backdrop-blur-sm shadow-lg"
+        >
+          Skip
+        </motion.button>
+      )}
 
       <SkipGuardModal 
         isOpen={showSkipModal} 

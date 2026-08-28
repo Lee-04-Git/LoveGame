@@ -33,7 +33,7 @@ const SkipGuardModal: React.FC<SkipGuardModalProps> = ({ isOpen, onClose }) => {
               😝
             </motion.div>
             <h3 className="text-xl font-bold text-pink-600 mb-6 font-poppins">
-              Hey silly, no skipping allowed! 😝
+              Nuh uh
             </h3>
             <motion.button
               whileHover={{ scale: 1.05 }}

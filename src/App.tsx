@@ -9,6 +9,7 @@ import ReasonsPage from './pages/ReasonsPage';
 import SecretLetterPage from './pages/SecretLetterPage';
 import MusicPage from './pages/MusicPage';
 import backgroundMusic from './assets/music/Bright_Eyes_First_Day_Of_My_Life.mp3';
+import customBg from './assets/custom-bg.jpg';
 
 type Page = 'welcome' | 'game' | 'password' | 'reasons' | 'letter' | 'music';
 
@@ -139,7 +140,7 @@ function App() {
       <div 
         className="absolute inset-0 opacity-30"
         style={{
-          backgroundImage: 'url(/src/assets/custom-bg.jpg)',
+          backgroundImage: `url(${customBg})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
